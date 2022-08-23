@@ -1,0 +1,19 @@
+{
+    "name": "Puzzles.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:f695592a03d9fbf419c0e152e038147f",
+        "GUID:b56025855fa132f4b9b281732869f151"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
