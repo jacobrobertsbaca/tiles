@@ -1,4 +1,3 @@
-using Tiles.Core;
 using UnityEngine;
 
 namespace Tiles.Puzzles
@@ -8,12 +7,7 @@ namespace Tiles.Puzzles
         [SerializeField] private float tileSize = 1;
         public float TileSize => tileSize;
 
-        protected override void OnAwake()
-        {
-            Game.Current.OnInitialized(this);
-        }
-
-        protected override bool Initialize()
+        protected override bool OnInitialize()
         {
             Debug.Log("Initialized Puzzle");
             return true;

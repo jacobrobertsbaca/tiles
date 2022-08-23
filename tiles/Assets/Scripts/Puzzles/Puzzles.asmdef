@@ -1,5 +1,5 @@
 {
-    "name": "Puzzles",
+    "name": "Tiles.Puzzles",
     "rootNamespace": "",
     "references": [
         "GUID:b56025855fa132f4b9b281732869f151"

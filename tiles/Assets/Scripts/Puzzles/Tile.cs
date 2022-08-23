@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using Tiles.Core;
 using UnityEngine;
 
 namespace Tiles.Puzzles
@@ -24,7 +21,7 @@ namespace Tiles.Puzzles
         {
             if (!Puzzle)
             {
-                Debug.LogError($"{nameof(Tile)} without parent {nameof(Puzzle)} found. This {nameof(Tile)} will be destroyed.");
+                Debug.LogError($"{nameof(Tile)} without parent {nameof(Puzzles.Puzzle)} found. This {nameof(Tile)} will be destroyed.");
                 Destroy(gameObject);
                 return;
             }
@@ -32,7 +29,7 @@ namespace Tiles.Puzzles
             Puzzle.OnInitialized(this);
         }
 
-        protected override bool Initialize()
+        protected override bool OnInitialize()
         {
             Debug.Log("Initialized Tile");
             Puzzle.AddTile(this);

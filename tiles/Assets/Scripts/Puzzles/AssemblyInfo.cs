@@ -1,3 +1,3 @@
 ﻿using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Puzzles.Editor")]
+[assembly: InternalsVisibleTo("Tiles.Puzzles.Editor")]

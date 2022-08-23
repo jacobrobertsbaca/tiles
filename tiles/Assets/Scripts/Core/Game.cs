@@ -5,9 +5,13 @@ using UnityEngine;
 
 namespace Tiles.Core
 {
-    public abstract class Game<T> : Actor where T : Game<T>
+    public abstract class Game<T> : Actor<T> where T : Game<T>
     {
         private static T current;
+
+        /// <summary>
+        /// Gets the current <typeparamref name="T"/> instance.
+        /// </summary>
         public static T Current
         {
             get
@@ -19,7 +23,7 @@ namespace Tiles.Core
 
         protected override void OnAwake()
         {
-            GetInitializable().Initialize();
+            Initialize();
         }
 
         protected static void EnsureInstance()
