@@ -6,7 +6,7 @@ namespace Tiles
 
     public class Game : Core.Game<Game>
     {
-        [RuntimeInitializeOnLoadMethod]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
         private static void CreateGame() => EnsureInstance();
 
         protected override bool OnInitialize()

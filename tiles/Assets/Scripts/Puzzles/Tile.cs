@@ -1,11 +1,19 @@
+using System;
+using System.Collections.Generic;
+using Tiles.Core;
+using Tiles.Core.Events;
+using Tiles.Puzzles.Features;
 using UnityEngine;
 
 namespace Tiles.Puzzles
 {
     public class Tile : Actor
     {
-        [SerializeField] internal Vector2Int gridIndex;
-        public Vector2Int GridIndex => gridIndex;
+        public static readonly Event<Tile> TileAdded = new($"{nameof(Tile)}::{nameof(TileAdded)}");
+        public static readonly Event<Tile> TileRemoved = new($"{nameof(Tile)}::{nameof(TileRemoved)}");
+
+        [SerializeField] internal Vector2Int index;
+        public Vector2Int Index => index;
 
         private Puzzle puzzle;
         public Puzzle Puzzle
@@ -17,44 +25,46 @@ namespace Tiles.Puzzles
             }
         }
 
+        private readonly List<TileFeature> features = new();
+        public IReadOnlyList<TileFeature> Features => features;
+
         protected override void OnAwake()
         {
-            if (!Puzzle)
-            {
-                Debug.LogError($"{nameof(Tile)} without parent {nameof(Puzzles.Puzzle)} found. This {nameof(Tile)} will be destroyed.");
-                Destroy(gameObject);
-                return;
-            }
-
-            Puzzle.OnInitialized(this);
+            base.OnAwake();
+            if (!Puzzle) Debug.LogWarning($"{nameof(Tile)} without parent {nameof(Puzzles.Puzzle)} found.");
+            else Puzzle.OnInitialized(this);
         }
 
         protected override bool OnInitialize()
         {
-            Debug.Log("Initialized Tile");
-            Puzzle.AddTile(this);
+            TileAdded.Execute(this, this);
+            Subscribe(TileFeature.FeatureAdded, OnTileFeatureAdded);
+            Subscribe(TileFeature.FeatureRemoved, OnTileFeatureRemoved);
             return true;
         }
 
-        /// <summary>
-        /// Aligns this <see cref="Tile"/> to conform with its <see cref="GridIndex"/>
-        /// </summary>
-        /// <remarks>
-        /// The tile's height above or below the grid will be preserved.
-        /// </remarks>
-        public void AlignToGrid()
+        private void OnTileFeatureAdded(EventContext context, TileFeature feature)
         {
-            var puzzleLocal = Puzzle.transform.InverseTransformPoint(transform.position);
-            transform.position = Puzzle.transform.TransformPoint(new Vector3(
-                gridIndex.x * Puzzle.TileSize,
-                puzzleLocal.y,
-                gridIndex.y * Puzzle.TileSize));
+            if (features.Contains(feature)) return;
+            features.Add(feature);
+        }
+
+        private void OnTileFeatureRemoved(EventContext context, TileFeature feature)
+        {
+            features.Remove(feature);
+        }
+
+        protected override void Destroy()
+        {
+            base.Destroy();
+            TileRemoved.Execute(this, this);
         }
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            AlignToGrid();
+            var puzzle = GetComponentInParent<Puzzle>();
+            puzzle.AlignToGrid(this);
         }
 #endif
     }

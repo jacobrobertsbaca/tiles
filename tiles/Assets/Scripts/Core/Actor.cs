@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Tiles.Core.Events;
 using UnityEngine;
 
 namespace Tiles.Core
 {
     /// <summary>
-    /// The base <see cref="MonoBehaviour"/> utilizing dependent initialization.
+    /// An event-aware <see cref="MonoBehaviour"/> utilizing dependent initialization.
     /// </summary>
     /// <typeparam name="TGame">The specific <see cref="Game{T}"/> type, which is also the first actor to be initialized</typeparam>
     /// <remarks>
@@ -90,6 +91,68 @@ namespace Tiles.Core
 
         #endregion
 
+        #region Events
+
+        /// <summary>
+        /// Subscribes to an event through a target
+        /// </summary>
+        /// <typeparam name="T">The event data type</typeparam>
+        /// <param name="evt">The event to listen for</param>
+        /// <param name="target">
+        /// The target of the event.
+        /// Once event propogation reaches this actor's transform, <paramref name="listener"/> will be invoked
+        /// </param>
+        /// <param name="listener">The callback to invoke once event propogation reaches <paramref name="target"/></param>
+        /// <param name="isCapture">
+        /// If <c>true</c>, listener may be invoked during the event's trickle-down phase.
+        /// By default, listeners are only triggered during the bubble-up or target phase.
+        /// </param>
+        /// <remarks>
+        /// This method will do nothing if either <paramref name="listener"/> or <paramref name="target"/> are <c>null</c>.
+        /// </remarks>
+        protected void Subscribe<T>(Event<T> evt, Actor<TGame> target, EventListener<T> listener, bool isCapture = false)
+        {
+            if (!target) return;
+            evt.Dispatcher.Subscribe(target.transform, listener, this, isCapture);
+        }
+
+        /// <summary>
+        /// Subscribes to an event with this actor as the target
+        /// </summary>
+        /// <typeparam name="T">The event data type</typeparam>
+        /// <param name="evt">The event to listen for</param>
+        /// <param name="listener">The callback to invoke once event propogation reaches this actor</param>
+        /// <param name="isCapture">
+        /// If <c>true</c>, listener may be invoked during the event's trickle-down phase.
+        /// By default, listeners are only triggered during the bubble-up or target phase.
+        /// </param>
+        /// <remarks>
+        /// This method will do nothing if either <paramref name="listener"/> is <c>null</c>.
+        /// </remarks>
+        protected void Subscribe<T>(Event<T> evt, EventListener<T> listener, bool isCapture = false)
+            => evt.Dispatcher.Subscribe(transform, listener, this, isCapture);
+
+        /// <summary>
+        /// Unsubscribes from an event
+        /// </summary>
+        /// <typeparam name="T">The event data type</typeparam>
+        /// <param name="evt">The event to unsubscribe from</param>
+        /// <param name="listener">The listener (previously subscribed) that should be unsubscribed</param>
+        protected void Unsubscribe<T>(Event<T> evt, EventListener<T> listener)
+            => evt.Dispatcher.Unsubscribe(listener, this);
+
+        /// <summary>
+        /// Unsubscribes from an event
+        /// </summary>
+        /// <remarks>
+        /// All listeners from prior calls to <see cref="Subscribe"/> by this actor will be unsubscribed
+        /// </remarks>
+        /// <typeparam name="T">The event data type</typeparam>
+        /// <param name="evt">The event to unsubscribe all subscriptions from</param>
+        protected void Unsubscribe<T>(Event<T> evt) => evt.Dispatcher.Unsubscribe(this);
+
+        #endregion
+
         #region Unity Messages
 
         /// <summary>
@@ -111,6 +174,12 @@ namespace Tiles.Core
         /// </remarks>
         protected virtual void OnStart() { }
         private void Start() => OnStart();
+
+        /// <summary>
+        /// Override to add behaviour to run on OnDestroy.
+        /// </summary>
+        protected virtual void Destroy() { }
+        private void OnDestroy() => Destroy();
 
         #endregion
     }
