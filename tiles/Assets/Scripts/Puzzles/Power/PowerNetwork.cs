@@ -3,90 +3,198 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Tiles.Core.Events;
+using Tiles.Puzzles.Features;
 using UnityEngine;
+using UnityEngine.Assertions;
+using UnityEngine.Pool;
 
 namespace Tiles.Puzzles.Power
 {
-    public class PowerNetwork
+    public class PowerNetwork : Actor
     {
-        public class TilePower
+        public interface IReadOnlyTilePower
         {
-            private PowerNetwork network;
-            public TilePower(PowerNetwork network) => this.network = network;
+            public PowerInfo this[PowerNode node] { get; }
+            public Tile Tile { get; }
         }
 
-        private readonly Dictionary<PowerFeature, ISet<PowerFeature>> adjacencies = new();
-        private readonly HashSet<PowerSourceFeature> sources = new();
-
-        private readonly Dictionary<Vector2Int, PowerInfo> powerMap = new();
-        private readonly Dictionary<Vector2Int, ISet<PowerFeature>> inputMap = new();
-        private readonly Dictionary<Vector2Int, ISet<PowerFeature>> outputMap = new();
-
-        public void Attach (PowerFeature feature)
+        public class TilePower : IReadOnlyTilePower
         {
-            foreach (var input in feature.Inputs)
-            {
-                var absolute = input.ToAbsolute(feature.Tile);
-                if (!inputMap.ContainsKey(absolute)) inputMap[absolute] = new HashSet<PowerFeature>();
-                inputMap[absolute].Add(feature);
+            internal IReadOnlyDictionary<PowerNode, PowerInfo> Changes => changes;
+            public Tile Tile => feature.Tile;
 
-                if (outputMap.TryGetValue(absolute, out var outputs))
+            private readonly Dictionary<PowerNode, PowerInfo> changes = new();
+            private readonly PowerNetwork network;
+            private PowerFeature feature;
+
+            public PowerInfo this[PowerNode node]
+            {
+                get
                 {
-                    foreach (var output in outputs)
-                    {
-                        if (output == feature) continue;
-                        adjacencies[output].Add(feature);
-                    }
+                    if (changes.TryGetValue(node, out var power)) return power;
+                    return network.GetPower(node.ToAbsolute(feature.Tile));
+                }
+
+                set
+                {
+                    if (value is null) value = PowerInfo.None;
+                    changes[node] = value;
                 }
             }
 
-            if (!adjacencies.ContainsKey(feature)) adjacencies[feature] = new HashSet<PowerFeature>();
 
-            foreach (var output in feature.Outputs)
+            internal TilePower(PowerNetwork network) => this.network = network;
+            
+            internal void SetFeature(PowerFeature feature)
             {
-                var absolute = output.ToAbsolute(feature.Tile);
-                if (!outputMap.ContainsKey(absolute)) outputMap[absolute] = new HashSet<PowerFeature>();
-                outputMap[absolute].Add(feature);
+                changes.Clear();
+                this.feature = feature;
+            }
 
-                if (inputMap.TryGetValue(absolute, out var inputs))
+        }
+
+        private readonly Dictionary<Vector2Int, PowerInfo> powerMap = new();
+        private readonly Dictionary<Vector2Int, PowerInfo> powerMapUpdates = new();
+
+        private readonly Dictionary<Vector2Int, List<PowerFeature>> inputFeatures = new();
+        private readonly List<PowerFeature> features = new();
+        private TilePower tilePower;
+
+        protected override void OnAwake()
+        {
+            base.OnAwake();
+            if (TryGetComponent(out Puzzle puzzle)) puzzle.OnInitialized(this);
+            else Debug.LogWarning($"{nameof(PowerNetwork)} found without {nameof(Puzzle)}");
+        }
+
+        protected override bool OnInitialize()
+        {
+            tilePower = new TilePower(this);
+            Subscribe(TileFeature.FeatureAdded, OnFeatureAdded);
+            Subscribe(TileFeature.FeatureRemoved, OnFeatureRemoved);
+            return base.OnInitialize();
+        }
+
+        private void OnFeatureAdded(EventContext context, TileFeature feature)
+        {
+            if (feature is not PowerFeature pf) return;
+            AddFeature(pf);
+            TransmitOne(pf);
+        }
+
+        private void OnFeatureRemoved(EventContext context, TileFeature feature)
+        {
+            if (feature is not PowerFeature pf) return;
+            RemoveFeature(pf);
+            TransmitAll();
+        }
+
+        private void AddFeature(PowerFeature feature)
+        {
+            Assert.IsNotNull(feature);
+            if (features.Contains(feature)) return;
+            foreach (var input in feature.Inputs)
+            {
+                var absolute = input.ToAbsolute(feature.Tile);
+                if (!inputFeatures.ContainsKey(absolute)) inputFeatures[absolute] = new();
+                var features = inputFeatures[absolute];
+                if (features.Contains(feature)) return;
+                features.Add(feature);
+            }
+        }
+
+        private void RemoveFeature(PowerFeature feature)
+        {
+            Assert.IsNotNull(feature);
+            if (!features.Contains(feature)) return;
+            foreach (var features in inputFeatures.Values)
+                features.Remove(feature);
+        }
+
+        private PowerInfo GetPower(Vector2Int absolute)
+        {
+            if (powerMapUpdates.TryGetValue(absolute, out var updatedPower)) return updatedPower;
+            if (powerMap.TryGetValue(absolute, out var power)) return power;
+            return PowerInfo.None;
+        }
+
+        private void TransmitOne(PowerFeature feature)
+        {
+            BeginTransmit();
+            DoTransmit(feature);
+            EndTransmit();
+        }
+
+        private void TransmitAll()
+        {
+            powerMap.Clear();
+            BeginTransmit();
+            foreach (var feature in features) DoTransmit(feature);
+            EndTransmit();
+        }
+
+        private void BeginTransmit()
+        {
+            powerMapUpdates.Clear();
+        }
+             
+        private void DoTransmit(PowerFeature powerFeature)
+        {
+            Assert.IsNotNull(powerFeature);
+
+            Queue<PowerFeature> updates = new();
+            updates.Enqueue(powerFeature);
+
+            while (updates.Count > 0)
+            {
+                PowerFeature feature = updates.Dequeue();
+                tilePower.SetFeature(feature);
+                feature.Transmit(tilePower);
+
+                foreach (var (node, power) in tilePower.Changes)
+                {
+                    var absolute = node.ToAbsolute(feature.Tile);
+                    if (GetPower(absolute) != power)
+                    {
+                        if (inputFeatures.TryGetValue(absolute, out var inputs))
+                        {
+                            foreach (var input in inputs)
+                            {
+                                updates.Enqueue(input);
+                            }
+                        }
+
+                        powerMapUpdates[absolute] = power;
+                    }
+                }
+            }
+        }
+
+        private void EndTransmit()
+        {
+            List<Vector2Int> updatedInputs = new();
+
+            foreach (var (absolute, power) in powerMapUpdates)
+            {
+                if (powerMap.TryGetValue(absolute, out var existingPower))
+                {
+                    if (power != existingPower) updatedInputs.Add(absolute);
+                } else updatedInputs.Add(absolute);
+                powerMap[absolute] = power;
+            }
+
+            foreach (var absolute in updatedInputs)
+            {
+                if (inputFeatures.TryGetValue(absolute, out var inputs))
                 {
                     foreach (var input in inputs)
                     {
-                        if (input == feature) continue;
-                        adjacencies[feature].Add(input);
+                        tilePower.SetFeature(input);
+                        PowerFeature.InputsUpdated.Execute(input, tilePower);
                     }
                 }
             }
-
-            if (feature is PowerSourceFeature source) sources.Add(source);
-        }
-
-        public void Detach(PowerFeature feature)
-        {
-            foreach (var input in feature.Inputs)
-            {
-                var absolute = input.ToAbsolute(feature.Tile);
-                if (outputMap.TryGetValue(absolute, out var outputs))
-                {
-                    foreach (var output in outputs)
-                    {
-                        adjacencies[output].Remove(feature);
-                    }
-                }
-
-                if (inputMap.TryGetValue(absolute, out var inputs))
-                    inputs.Remove(feature);
-            }
-            
-            foreach (var output in feature.Outputs)
-            {
-                var absolute = output.ToAbsolute(feature.Tile);
-                if (outputMap.TryGetValue(absolute, out var outputs))
-                    outputs.Remove(feature);
-            }
-
-            adjacencies.Remove(feature);
-            if (feature is PowerSourceFeature source) sources.Remove(source);
         }
     }
 }

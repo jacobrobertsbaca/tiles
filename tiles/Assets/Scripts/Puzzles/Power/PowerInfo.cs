@@ -1,95 +1,140 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
+using UnityEngine.Assertions;
 
 namespace Tiles.Puzzles.Power
 {
-    public class PowerInfo
+    public class PowerInfo : IEquatable<PowerInfo>
     {
-        private struct SourceEntry
+        private readonly struct Entry : IEquatable<Entry>, IComparable<Entry>
         {
-            public PowerSourceFeature Source;
-            public PowerType Type;
-            public int Strength;
-            public int Version;
+            public readonly PowerFeature Source;
+            public readonly bool Power;
+            public readonly int Version;
 
-            public SourceEntry(PowerSourceFeature source, PowerType type, int strength)
+            public Entry(PowerFeature source, bool power, int version)
             {
                 Source = source;
-                Type = type;
-                Strength = strength;
-                Version = 1;
+                Power = power;
+                Version = version;
             }
 
-            public bool Compare(PowerSourceFeature source, PowerType type) => Source == source && Type == type;
-            public bool Compare(SourceEntry entry) => Compare(entry.Source, entry.Type);
+            public int CompareTo(Entry other)
+            {
+                if (Power != other.Power) return Power.CompareTo(other.Power);
+                if (Version != other.Version) return Version.CompareTo(other.Version);
+                return Source.GetInstanceID().CompareTo(other.Source.GetInstanceID());
+            }
+
+            public bool Equals(Entry other) =>
+                Source == other.Source &&
+                Power == other.Power &&
+                Version == other.Version;
+
+            public override bool Equals(object obj) => obj is Entry e && Equals(e);
+            public override int GetHashCode() => HashCode.Combine(Source, Power, Version);
+            public static bool operator ==(Entry lhs, Entry rhs) => lhs.Equals(rhs);
+            public static bool operator !=(Entry lhs, Entry rhs) => !(lhs == rhs);
         }
 
-        private readonly List<SourceEntry> sources;
+        public static readonly PowerInfo None = new PowerInfo();
 
-        private PowerInfo(List<SourceEntry> sources) => this.sources = sources;
-        private PowerInfo() : this(new List<SourceEntry>()) {}
-        private PowerInfo(PowerInfo other) : this(other.sources.ToList()) {}
+        private readonly List<Entry> entries = new List<Entry>();
 
-        public PowerInfo WithSource(PowerSourceFeature source, PowerType type, int strength = 1)
+        private PowerInfo() : this(new List<Entry>()) {}
+
+        private PowerInfo(List<Entry> entries)
         {
-            PowerInfo pi = new PowerInfo(this);
-            for (int i = 0; i < pi.sources.Count; i++)
+            entries.Sort();
+            this.entries = entries;
+        }
+
+        public PowerInfo SetSource(PowerFeature source, bool power)
+        {
+            Assert.IsNotNull(source);
+
+            int changedIndex = -1;
+
+            for (int i = 0; i < entries.Count; i++)
             {
-                SourceEntry entry = pi.sources[i];
-                if (entry.Compare(source, type))
+                Entry entry = entries[i];
+                if (entry.Source == source)
                 {
-                    if (entry.Strength == strength) return pi;
-                    entry.Strength = strength;
-                    entry.Version++;
-                    pi.sources[i] = entry;
-                    return pi;
+                    if (entry.Power == power) return this;
+                    changedIndex = i;
+                    break;
                 }
             }
 
-            // Source not found, we need to add it
-            pi.sources.Add(new SourceEntry(source, type, strength));
-            return pi;
+            List<Entry> newEntries = new(entries);
+            if (changedIndex < 0) newEntries.Add(new Entry(source, power, 0));
+            else newEntries[changedIndex] = new Entry(source, power, newEntries[changedIndex].Version + 1);
+            return new PowerInfo(newEntries);
         }
 
         public PowerInfo Combine(PowerInfo other)
         {
-            PowerInfo pi = new PowerInfo(this);
-            for (int i = 0; i < other.sources.Count; i++)
-            {
-                SourceEntry otherEntry = other.sources[i];
+            if (Equals(other)) return this;
+            if (other is null) other = None;
 
-                // If this source/type is already in `pi`, we have a conflict and must resolve it
-                // To do so, we choose the entry with the highest version
-                int thisIndex = sources.FindIndex(entry => entry.Compare(otherEntry));
-                if (thisIndex >= 0)
+            List<Entry> resulting = new(entries);
+
+            void CombineEntry(Entry newEntry)
+            {
+                for (int i = 0; i < entries.Count; i++)
                 {
-                    SourceEntry thisEntry = pi.sources[thisIndex];
-                    if (thisEntry.Version == otherEntry.Version)
-                        pi.sources[thisIndex] = thisEntry.Strength > otherEntry.Strength ? thisEntry : otherEntry;
-                    else pi.sources[thisIndex] = thisEntry.Version > otherEntry.Version ? thisEntry : otherEntry;
-                } else pi.sources.Add(otherEntry);
+                    var oldEntry = resulting[i];
+                    if (newEntry.Source == oldEntry.Source)
+                    {
+                        if (newEntry.Version >= oldEntry.Version)
+                        {
+                            resulting.RemoveAt(i);
+                            resulting.Add(newEntry);
+                        }
+                        return;
+                    }
+                }
+
+                resulting.Add(newEntry);
             }
 
-            return pi;
+            foreach (var newEntry in other.entries) CombineEntry(newEntry);
+            return new PowerInfo(resulting);
         }
 
-        public bool HasPower(PowerType type)
+        public bool HasPower()
         {
-            foreach (var src in sources)
+            foreach (var entry in entries)
             {
-                if (src.Strength > 0 && src.Type == type) return true;
+                if (entry.Power) return true;
             }
+
             return false;
         }
 
-        public int GetPower(PowerType type)
+        public bool Equals(PowerInfo other)
         {
-            int sum = 0;
-            foreach (var src in sources)
-            {
-                if (src.Type == type) sum += src.Strength;
-            }
-            return sum;
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return entries.SequenceEqual(other.entries);
         }
+
+        public override int GetHashCode()
+        {
+            int hash = 0;
+            foreach (var entry in entries) hash = HashCode.Combine(hash, entry);
+            return hash;
+        }
+
+        public override bool Equals(object obj) => Equals(obj as PowerInfo);
+        public static bool operator ==(PowerInfo lhs, PowerInfo rhs)
+        {
+            if (lhs is null) return rhs is null;
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(PowerInfo lhs, PowerInfo rhs) => !(lhs == rhs);
     }
 }

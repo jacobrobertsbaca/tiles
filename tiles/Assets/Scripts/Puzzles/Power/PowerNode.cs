@@ -8,6 +8,7 @@ namespace Tiles.Puzzles.Power
     {
         // The number of nodes per cell side. Change at your peril
         private const int kGridSize = 5;
+
         private const float kInverseGridSize = 1f / kGridSize;
 
         private int nodeIndex;
