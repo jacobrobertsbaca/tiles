@@ -13,7 +13,7 @@ namespace Tiles.Puzzles.Power
 
         public IReadOnlyCollection<PowerNode> Inputs { get; }
 
-        public abstract void Transmit(PowerNetwork.TilePower power);
+        public abstract void Transmit(PowerNetwork.ITilePower power);
 
         protected override bool OnInitialize()
         {

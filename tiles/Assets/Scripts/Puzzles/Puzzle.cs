@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Tiles.Core.Events;
+using Tiles.Puzzles.Power;
 using UnityEngine;
 
 namespace Tiles.Puzzles
@@ -14,6 +15,10 @@ namespace Tiles.Puzzles
 
         protected override bool OnInitialize()
         {
+            // Add power network
+            if (!GetComponent<PowerNetwork>())
+                gameObject.AddComponent<PowerNetwork>();
+
             Subscribe(Tile.TileAdded, OnTileAdded);
             Subscribe(Tile.TileRemoved, OnTileRemoved);
             return true;

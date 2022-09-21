@@ -30,7 +30,6 @@ namespace Tiles.Puzzles
 
         protected override void OnAwake()
         {
-            base.OnAwake();
             if (!Puzzle) Debug.LogWarning($"{nameof(Tile)} without parent {nameof(Puzzles.Puzzle)} found.");
             else Puzzle.OnInitialized(this);
         }

@@ -22,7 +22,6 @@ namespace Tiles.Puzzles.Features
 
         protected override void OnAwake()
         {
-            base.OnAwake();
             if (!Tile) Debug.LogWarning($"{GetType().Name} found without parent ${nameof(Puzzles.Tile)}");
             else Tile.OnInitialized(this);
         }

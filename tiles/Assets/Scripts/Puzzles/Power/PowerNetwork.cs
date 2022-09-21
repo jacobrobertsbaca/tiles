@@ -19,7 +19,12 @@ namespace Tiles.Puzzles.Power
             public Tile Tile { get; }
         }
 
-        public class TilePower : IReadOnlyTilePower
+        public interface ITilePower : IReadOnlyTilePower
+        {
+            public new PowerInfo this[PowerNode node] { get; set; }
+        }
+
+        public class TilePower : ITilePower
         {
             internal IReadOnlyDictionary<PowerNode, PowerInfo> Changes => changes;
             public Tile Tile => feature.Tile;
@@ -43,7 +48,6 @@ namespace Tiles.Puzzles.Power
                 }
             }
 
-
             internal TilePower(PowerNetwork network) => this.network = network;
             
             internal void SetFeature(PowerFeature feature)
@@ -56,17 +60,9 @@ namespace Tiles.Puzzles.Power
 
         private readonly Dictionary<Vector2Int, PowerInfo> powerMap = new();
         private readonly Dictionary<Vector2Int, PowerInfo> powerMapUpdates = new();
-
         private readonly Dictionary<Vector2Int, List<PowerFeature>> inputFeatures = new();
         private readonly List<PowerFeature> features = new();
         private TilePower tilePower;
-
-        protected override void OnAwake()
-        {
-            base.OnAwake();
-            if (TryGetComponent(out Puzzle puzzle)) puzzle.OnInitialized(this);
-            else Debug.LogWarning($"{nameof(PowerNetwork)} found without {nameof(Puzzle)}");
-        }
 
         protected override bool OnInitialize()
         {
@@ -81,6 +77,9 @@ namespace Tiles.Puzzles.Power
             if (feature is not PowerFeature pf) return;
             AddFeature(pf);
             TransmitOne(pf);
+
+            tilePower.SetFeature(pf);
+            PowerFeature.InputsUpdated.Execute(pf, tilePower);
         }
 
         private void OnFeatureRemoved(EventContext context, TileFeature feature)
@@ -161,6 +160,7 @@ namespace Tiles.Puzzles.Power
                         {
                             foreach (var input in inputs)
                             {
+                                if (input == feature) continue; // Don't let feature transmit to itself
                                 updates.Enqueue(input);
                             }
                         }
