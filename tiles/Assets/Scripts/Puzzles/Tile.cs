@@ -63,8 +63,7 @@ namespace Tiles.Puzzles
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            var puzzle = GetComponentInParent<Puzzle>();
-            puzzle.AlignToGrid(this);
+            if (Puzzle) Puzzle.AlignToGrid(this);
         }
 #endif
     }
