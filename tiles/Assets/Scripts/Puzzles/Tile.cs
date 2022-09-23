@@ -30,6 +30,7 @@ namespace Tiles.Puzzles
 
         protected override void OnAwake()
         {
+            base.OnAwake();
             if (!Puzzle) Debug.LogWarning($"{nameof(Tile)} without parent {nameof(Puzzles.Puzzle)} found.");
             else Puzzle.OnInitialized(this);
         }
@@ -53,9 +54,9 @@ namespace Tiles.Puzzles
             features.Remove(feature);
         }
 
-        protected override void Destroy()
+        protected override void OnDestroy()
         {
-            base.Destroy();
+            base.OnDestroy();
             TileRemoved.Execute(this, this);
         }
 

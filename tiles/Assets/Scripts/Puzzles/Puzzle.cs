@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Tiles.Core;
 using Tiles.Core.Events;
 using Tiles.Puzzles.Power;
 using UnityEngine;
@@ -11,7 +12,13 @@ namespace Tiles.Puzzles
         [SerializeField] private float tileSize = 1;
         public float TileSize => tileSize;
 
-        private readonly Dictionary<Vector2Int, Tile> tiles = new Dictionary<Vector2Int, Tile>(); 
+        private readonly Dictionary<Vector2Int, Tile> tiles = new Dictionary<Vector2Int, Tile>();
+
+        protected override void OnAwake()
+        {
+            base.OnAwake();
+            Game.Current.OnInitialized(this);
+        }
 
         protected override bool OnInitialize()
         {
@@ -42,7 +49,7 @@ namespace Tiles.Puzzles
             tiles.Remove(tile.Index);
         }
 
-        protected override void Destroy()
+        protected override void OnDestroy()
         {
             Unsubscribe(Tile.TileAdded);
             Unsubscribe(Tile.TileRemoved);

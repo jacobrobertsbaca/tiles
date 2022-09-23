@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Tiles.Core
 {
-    public abstract class Game<TGame> : Actor<TGame> where TGame : Game<TGame>
+    public abstract class Game<TGame> : Actor where TGame : Game<TGame>
     {
         private static TGame current;
 

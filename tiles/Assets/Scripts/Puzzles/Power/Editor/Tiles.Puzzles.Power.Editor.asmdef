@@ -1,0 +1,18 @@
+{
+    "name": "Tiles.Puzzles.Power.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:f695592a03d9fbf419c0e152e038147f"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

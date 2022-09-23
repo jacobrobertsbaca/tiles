@@ -9,13 +9,7 @@ namespace Tiles.Core
     /// <summary>
     /// An event-aware <see cref="MonoBehaviour"/> utilizing dependent initialization.
     /// </summary>
-    /// <typeparam name="TGame">The specific <see cref="Game{T}"/> type, which is also the first actor to be initialized</typeparam>
-    /// <remarks>
-    /// By default, all actors are initialized after <typeparamref name="TGame"/> is initialized.
-    /// This behaviour can be changed by overriding <see cref="Actor{TGame}.OnAwake"/>.
-    /// </remarks>
-    public abstract class Actor<TGame> : MonoBehaviour, IInitializable
-        where TGame : Game<TGame>
+    public abstract class Actor : MonoBehaviour, IInitializable
     {
         #region Initialization
         /// <summary>
@@ -110,7 +104,7 @@ namespace Tiles.Core
         /// <remarks>
         /// This method will do nothing if either <paramref name="listener"/> or <paramref name="target"/> are <c>null</c>.
         /// </remarks>
-        protected void Subscribe<T>(Event<T> evt, Actor<TGame> target, EventListener<T> listener, bool isCapture = false)
+        protected void Subscribe<T>(Event<T> evt, Actor target, EventListener<T> listener, bool isCapture = false)
         {
             if (!target) return;
             evt.Dispatcher.Subscribe(target.transform, listener, this, isCapture);
@@ -162,7 +156,7 @@ namespace Tiles.Core
         /// This should primarily be used for scheduling initialization order.
         /// Initialization logic should be implemented in <see cref="OnInitialize"/>
         /// </remarks>
-        protected virtual void OnAwake() { Game<TGame>.Current.OnInitialized(this); }
+        protected virtual void OnAwake() { }
         private void Awake() => OnAwake();
 
         /// <summary>
@@ -176,10 +170,19 @@ namespace Tiles.Core
         private void Start() => OnStart();
 
         /// <summary>
+        /// Override to add behaviour to run on OnEnable.
+        /// </summary>
+        protected virtual void OnEnable() { }
+
+        /// <summary>
+        /// Override to add behaviour to run on OnDisable.
+        /// </summary>
+        protected virtual void OnDisable() { }
+
+        /// <summary>
         /// Override to add behaviour to run on OnDestroy.
         /// </summary>
-        protected virtual void Destroy() { }
-        private void OnDestroy() => Destroy();
+        protected virtual void OnDestroy() { }
 
         #endregion
     }
@@ -192,8 +195,7 @@ namespace Tiles.Core
         /// <typeparam name="TGame">The game type.</typeparam>
         /// <param name="actors">A collection of actors. Elements may be null.</param>
         /// <param name="initAction">A callback to be run on initialization</param>
-        public static void OnInitialized<TGame>(this IEnumerable<Actor<TGame>> actors, Action initAction)
-            where TGame : Game<TGame>
+        public static void OnInitialized(this IEnumerable<Actor> actors, Action initAction)
         {
             if (initAction is null) return;
 
@@ -228,8 +230,7 @@ namespace Tiles.Core
         /// <typeparam name="TGame">The game type.</typeparam>
         /// <param name="actors">A collection of actors. Elements may be null.</param>
         /// <param name="initializable">The object to be initialized</param>
-        public static void OnInitialized<TGame>(this IEnumerable<Actor<TGame>> actors, IInitializable initializable)
-            where TGame : Game<TGame>
+        public static void OnInitialized<TGame>(this IEnumerable<Actor> actors, IInitializable initializable)
         {
             if (initializable is null) return;
             if (initializable.InitStatus != InitStatus.Uninitialized) return;

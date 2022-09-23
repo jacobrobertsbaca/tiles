@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Tiles.Core;
 using Tiles.Core.Events;
 using UnityEngine;
 
@@ -22,6 +23,7 @@ namespace Tiles.Puzzles.Features
 
         protected override void OnAwake()
         {
+            base.OnAwake();
             if (!Tile) Debug.LogWarning($"{GetType().Name} found without parent ${nameof(Puzzles.Tile)}");
             else Tile.OnInitialized(this);
         }
@@ -32,9 +34,9 @@ namespace Tiles.Puzzles.Features
             return true;
         }
 
-        protected override void Destroy()
+        protected override void OnDestroy()
         {
-            base.Destroy();
+            base.OnDestroy();
             FeatureRemoved.Execute(this, this);
         }
     }

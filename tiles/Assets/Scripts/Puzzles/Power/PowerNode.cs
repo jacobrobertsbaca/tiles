@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Tiles.Puzzles.Power
 {
@@ -7,10 +9,25 @@ namespace Tiles.Puzzles.Power
     public struct PowerNode : IEquatable<PowerNode>
     {
         // The number of nodes per cell side. Change at your peril
-        private const int kGridSize = 5;
+        private static readonly int kGridSize = 5;
+        private static readonly float kInverseGridSize = 1f / (kGridSize - 1);
 
-        private const float kInverseGridSize = 1f / kGridSize;
+        private static PowerNode[] allNodes;
+        public static IReadOnlyList<PowerNode> AllNodes
+        {
+            get
+            {
+                if (allNodes is not null) return allNodes;
+                allNodes = new PowerNode[kGridSize * kGridSize];
+                for (int i = 0; i < allNodes.Length; i++)
+                    allNodes[i] = new PowerNode(i);
+                return allNodes;
+            }
+        }
 
+        public static int GridSize => kGridSize;
+
+        [SerializeField]
         private int nodeIndex;
 
         public int X => nodeIndex % kGridSize;
@@ -20,11 +37,17 @@ namespace Tiles.Puzzles.Power
         public Vector2 CenterOffset => Offset - 0.5f * Vector2.one;
         public bool OnEdge => X == 0 || X == kGridSize - 1 || Y == 0 || Y == kGridSize - 1;
 
+        public PowerNode(int index)
+        {
+            Assert.IsFalse(index < 0 || index >= kGridSize * kGridSize,
+                $"{nameof(index)} must be within [0, {kGridSize * kGridSize - 1}]");
+            nodeIndex = index;
+        }
+
         public PowerNode(int x, int y)
         {
-            if (x < 0 || x >= kGridSize ||
-                y < 0 || y >= kGridSize)
-                throw new ArgumentOutOfRangeException($"{nameof(x)} and {nameof(y)} must be within [0, {kGridSize})");
+            Assert.IsFalse(x < 0 || x >= kGridSize || y < 0 || y >= kGridSize,
+                $"{nameof(x)} and {nameof(y)} must be within [0, {kGridSize - 1}]");
             nodeIndex = y * kGridSize + x;
         }
 
@@ -35,18 +58,26 @@ namespace Tiles.Puzzles.Power
         /// <returns>An absolute position for this <see cref="PowerNode"/></returns>
         internal Vector2Int ToAbsolute(Tile tile)
         {
-#pragma warning disable CS0162 // Unreachable code detected
+            Assert.IsNotNull(tile);
             if (kGridSize <= 1) return tile.Index;
-#pragma warning restore CS0162 // Unreachable code detected
             // TODO: Take into account tile rotation
             return (kGridSize - 1) * tile.Index + new Vector2Int(X, Y);
         }
 
+        internal Vector3 ToAbsoluteWorld(Tile tile)
+        {
+            Assert.IsNotNull(tile.Puzzle);
+            if (kGridSize <= 1) return tile.Puzzle.GridToWorld(tile.Index);
+            Vector3 forward = tile.Puzzle.transform.forward;
+            Vector3 right = tile.Puzzle.transform.right;
+            Vector3 absoluteOrigin = tile.Puzzle.transform.position - 0.5f * tile.Puzzle.TileSize * (forward + right);
+            Vector2Int absolute = ToAbsolute(tile);
+            return absoluteOrigin + kInverseGridSize * absolute.x * right + kInverseGridSize * absolute.y * forward;
+        }
+
         private Vector2 GetOffset ()
         {
-#pragma warning disable CS0162 // Unreachable code detected
             if (kGridSize <= 1) return 0.5f * Vector2.one;
-#pragma warning restore CS0162 // Unreachable code detected
             return new Vector2(kInverseGridSize * X, kInverseGridSize * Y);
         }
 

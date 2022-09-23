@@ -2,8 +2,6 @@ using UnityEngine;
 
 namespace Tiles
 {
-    public class Actor : Core.Actor<Game> {}
-
     public class Game : Core.Game<Game>
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
