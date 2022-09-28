@@ -37,10 +37,21 @@ namespace Tiles.Puzzles
 
         protected override bool OnInitialize()
         {
-            TileAdded.Execute(this, this);
             Subscribe(TileFeature.FeatureAdded, OnTileFeatureAdded);
             Subscribe(TileFeature.FeatureRemoved, OnTileFeatureRemoved);
             return true;
+        }
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            OnInitialized(() => TileAdded.Execute(this, this));
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            OnInitialized(() => TileRemoved.Execute(this, this));
         }
 
         private void OnTileFeatureAdded(EventContext context, TileFeature feature)
@@ -57,7 +68,8 @@ namespace Tiles.Puzzles
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            TileRemoved.Execute(this, this);
+            Unsubscribe(TileFeature.FeatureAdded);
+            Unsubscribe(TileFeature.FeatureRemoved);
         }
 
 #if UNITY_EDITOR

@@ -58,12 +58,20 @@ namespace Tiles.Puzzles.Power
             }
         }
 
+        private enum TransmitState
+        {
+            None,
+            One,
+            All
+        }
+
         private readonly Dictionary<Vector2Int, PowerInfo> powerMap = new();
         private readonly Dictionary<Vector2Int, PowerInfo> powerMapUpdates = new();
         private readonly Dictionary<Vector2Int, List<PowerFeature>> inputFeatures = new();
         private readonly List<PowerFeature> features = new();
         private readonly HashSet<PowerFeature> transmittedFeatures = new();
         private TilePower tilePower;
+        private TransmitState state;
 
         protected override void OnAwake()
         {
@@ -103,13 +111,14 @@ namespace Tiles.Puzzles.Power
         {
             Assert.IsNotNull(feature);
             if (features.Contains(feature)) return;
+            features.Add(feature);
             foreach (var input in feature.Inputs)
             {
                 var absolute = input.ToAbsolute(feature.Tile);
                 if (!inputFeatures.ContainsKey(absolute)) inputFeatures[absolute] = new();
-                var features = inputFeatures[absolute];
-                if (features.Contains(feature)) return;
-                features.Add(feature);
+                var featureList = inputFeatures[absolute];
+                if (featureList.Contains(feature)) continue;
+                featureList.Add(feature);
             }
         }
 
@@ -117,35 +126,36 @@ namespace Tiles.Puzzles.Power
         {
             Assert.IsNotNull(feature);
             if (!features.Contains(feature)) return;
-            foreach (var features in inputFeatures.Values)
-                features.Remove(feature);
+            features.Remove(feature);
+            foreach (var featureList in inputFeatures.Values)
+                featureList.Remove(feature);
         }
 
         private PowerInfo GetPower(Vector2Int absolute)
         {
             if (powerMapUpdates.TryGetValue(absolute, out var updatedPower)) return updatedPower;
-            if (powerMap.TryGetValue(absolute, out var power)) return power;
+            if (state != TransmitState.All && powerMap.TryGetValue(absolute, out var power)) return power;
             return PowerInfo.None;
         }
 
         private void TransmitOne(PowerFeature feature, bool alwaysUpdate = false)
         {
-            BeginTransmit();
+            BeginTransmit(TransmitState.One);
             DoTransmit(feature);
             EndTransmit(alwaysUpdate ? feature : null);
         }
 
         private void TransmitAll()
         {
-            powerMap.Clear();
-            BeginTransmit();
+            BeginTransmit(TransmitState.All);
             foreach (var feature in features) DoTransmit(feature);
             EndTransmit();
         }
 
         // Called before a transmission cycle
-        private void BeginTransmit()
+        private void BeginTransmit(TransmitState state)
         {
+            this.state = state;
             powerMapUpdates.Clear();
             transmittedFeatures.Clear();
         }
@@ -153,8 +163,10 @@ namespace Tiles.Puzzles.Power
         // Called for each power element that needing an update during a transmission cycle
         private void DoTransmit(PowerFeature powerFeature)
         {
+            Assert.IsFalse(state == TransmitState.None);
             Assert.IsNotNull(powerFeature);
 
+            // TODO: Pool/cache Queue?
             Queue<PowerFeature> updates = new();
             updates.Enqueue(powerFeature);
 
@@ -170,7 +182,7 @@ namespace Tiles.Puzzles.Power
                 foreach (var (node, power) in tilePower.Changes)
                 {
                     var absolute = node.ToAbsolute(feature.Tile);
-                    if (GetPower(absolute) != power)
+                    if (!PowerInfo.StrictEquals.Equals(GetPower(absolute), power))
                     {
                         if (inputFeatures.TryGetValue(absolute, out var inputs))
                         {
@@ -198,23 +210,61 @@ namespace Tiles.Puzzles.Power
                 feature.OnAfterTransmit(tilePower);
             }
 
-            List<Vector2Int> updatedInputs = new();
+            // TODO: Pool/cache List?
+            List<Vector2Int> updatedNodes = new();
 
+            // Mark for update all nodes which had a change in power state 
             foreach (var (absolute, power) in powerMapUpdates)
             {
-                if (powerMap.TryGetValue(absolute, out var existingPower))
+                var existingPower = PowerInfo.None;
+                if (powerMap.ContainsKey(absolute)) existingPower = powerMap[absolute];
+                if (power != existingPower) updatedNodes.Add(absolute);
+            }
+
+            if (state == TransmitState.All)
+            {
+                // If transmitting through all nodes, then any nodes which originally had power
+                // but no longer do are considered updated
+                //
+                // Example: Cut Wire
+                // 
+                // S---x---
+                //
+                // Key: S=source, -=wire, x=removed wire
+                //
+                // If we did not do this pass, then the wires to the right of the cut would not
+                // get updated. These wires had power previously from the source S, but no longer would
+                // after removing the wire, and therefore need an update.
+                foreach (var absolute in powerMap.Keys)
                 {
-                    if (power != existingPower) updatedInputs.Add(absolute);
-                } else updatedInputs.Add(absolute);
+                    if (!powerMapUpdates.ContainsKey(absolute))
+                    {
+                        updatedNodes.Add(absolute);
+                    }
+                }
+
+                // We clear the network when transmitting through all nodes, so as to avoid power
+                // states from past transmissions lingering through the network
+                powerMap.Clear();
+            }
+
+            // Synchronize changes with the network
+            foreach (var (absolute, power) in powerMapUpdates)
+            {
                 powerMap[absolute] = power;
             }
 
-            foreach (var absolute in updatedInputs)
+            // We can re-use transmittedFeatures to keep track of which inputs have had their inputs updated
+            // so we don't call OnInputsUpdated twice
+            transmittedFeatures.Clear();
+
+            foreach (var absolute in updatedNodes)
             {
                 if (inputFeatures.TryGetValue(absolute, out var inputs))
                 {
                     foreach (var input in inputs)
                     {
+                        if (!transmittedFeatures.Add(input)) continue;
                         if (input == alwaysUpdate) alwaysUpdate = null;
                         tilePower.SetFeature(input);
                         input.OnInputsUpdated(tilePower);
@@ -227,6 +277,8 @@ namespace Tiles.Puzzles.Power
                 tilePower.SetFeature(alwaysUpdate);
                 alwaysUpdate.OnInputsUpdated(tilePower);
             }
+
+            state = TransmitState.None;
         }
 
         protected override void OnDestroy()

@@ -34,10 +34,16 @@ namespace Tiles.Puzzles.Features
             return true;
         }
 
-        protected override void OnDestroy()
+        protected override void OnEnable()
         {
-            base.OnDestroy();
-            FeatureRemoved.Execute(this, this);
+            base.OnEnable();
+            OnInitialized(() => FeatureAdded.Execute(this, this));
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            OnInitialized(() => FeatureRemoved.Execute(this, this));
         }
     }
 }

@@ -52,12 +52,8 @@ namespace Tiles.Puzzles.Features.Power
         protected internal override void OnTransmit(PowerNetwork.ITilePower power)
         {
             var combined = power[output].Combine(power[input]);
-            if (isDiode) power[output] = combined;
-            else
-            {
-                power[input] = combined;
-                power[output] = combined;
-            }
+            power[output] = combined;
+            if (!isDiode) power[input] = combined;
         }
 
         protected internal override void OnInputsUpdated(PowerNetwork.IReadOnlyTilePower power)

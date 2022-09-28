@@ -39,6 +39,52 @@ namespace Tiles.Puzzles.Power
             public static bool operator !=(Entry lhs, Entry rhs) => !(lhs == rhs);
         }
 
+        /// <summary>
+        /// Compares two <see cref="PowerInfo"/> on the basis of their public interface.
+        /// This is the default comparer used to implement <see cref="operator=="/>
+        /// </summary>
+        internal class Comparer : EqualityComparer<PowerInfo>
+        {
+            public override bool Equals(PowerInfo x, PowerInfo y)
+            {
+                if (x is null && y is null) return true;
+                if (x is null || y is null) return false;
+                if (ReferenceEquals(x, y)) return true;
+                return x.HasPower() == y.HasPower();
+            }
+
+            public override int GetHashCode(PowerInfo pi)
+            {
+                if (pi is null) return -1;
+                return pi.HasPower().GetHashCode();
+            }
+        }
+
+        /// <summary>
+        /// Compares two <see cref="PowerInfo"/> on the basis of their contents.
+        /// </summary>
+        internal class StrictComparer : EqualityComparer<PowerInfo>
+        {
+            public override bool Equals(PowerInfo x, PowerInfo y)
+            {
+                if (x is null && y is null) return true;
+                if (x is null || y is null) return false;
+                if (ReferenceEquals(x, y)) return true;
+                return x.entries.SequenceEqual(y.entries);
+            }
+
+            public override int GetHashCode(PowerInfo pi)
+            {
+                if (pi is null) return -1;
+                int hash = 0;
+                foreach (var entry in pi.entries) hash = HashCode.Combine(hash, entry);
+                return hash;
+            }
+        }
+
+        internal static readonly Comparer DefaultEquals = new Comparer();
+        internal static readonly StrictComparer StrictEquals = new StrictComparer();
+
         public static readonly PowerInfo None = new PowerInfo();
 
         private readonly List<Entry> entries = new List<Entry>();
@@ -77,7 +123,7 @@ namespace Tiles.Puzzles.Power
         public PowerInfo Combine(PowerInfo other)
         {
             if (Equals(other)) return this;
-            if (other is null) other = None;
+            other ??= None;
 
             List<Entry> resulting = new(entries);
 
@@ -114,27 +160,10 @@ namespace Tiles.Puzzles.Power
             return false;
         }
 
-        public bool Equals(PowerInfo other)
-        {
-            if (other is null) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return entries.SequenceEqual(other.entries);
-        }
-
-        public override int GetHashCode()
-        {
-            int hash = 0;
-            foreach (var entry in entries) hash = HashCode.Combine(hash, entry);
-            return hash;
-        }
-
+        public bool Equals(PowerInfo other) => DefaultEquals.Equals(this, other);
+        public override int GetHashCode() => DefaultEquals.GetHashCode(this);
         public override bool Equals(object obj) => Equals(obj as PowerInfo);
-        public static bool operator ==(PowerInfo lhs, PowerInfo rhs)
-        {
-            if (lhs is null) return rhs is null;
-            return lhs.Equals(rhs);
-        }
-
+        public static bool operator ==(PowerInfo lhs, PowerInfo rhs) => DefaultEquals.Equals(lhs, rhs);
         public static bool operator !=(PowerInfo lhs, PowerInfo rhs) => !(lhs == rhs);
     }
 }
