@@ -84,6 +84,8 @@ namespace Tiles.Puzzles.Power
             tilePower = new TilePower(this);
             Subscribe(TileFeature.FeatureAdded, OnFeatureAdded);
             Subscribe(TileFeature.FeatureRemoved, OnFeatureRemoved);
+            Subscribe(Tile.TileRotating, OnTileRotating);
+            Subscribe(Tile.TileRotated, OnTileRotated);
             Subscribe(PowerFeature.NeedsTransmit, OnFeatureNeedsTransmit);
             return base.OnInitialize();
         }
@@ -100,6 +102,14 @@ namespace Tiles.Puzzles.Power
             if (feature is not PowerFeature pf) return;
             RemoveFeature(pf);
             TransmitAll();
+        }
+
+        private void OnTileRotating(EventContext context, Tile tile)
+        {
+        }
+
+        private void OnTileRotated(EventContext context, Tile tile)
+        {
         }
 
         private void OnFeatureNeedsTransmit(EventContext context, PowerFeature feature)

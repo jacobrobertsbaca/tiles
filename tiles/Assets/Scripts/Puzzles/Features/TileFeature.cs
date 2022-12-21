@@ -30,7 +30,6 @@ namespace Tiles.Puzzles.Features
 
         protected override bool OnInitialize()
         {
-            FeatureAdded.Execute(this, this);
             return true;
         }
 

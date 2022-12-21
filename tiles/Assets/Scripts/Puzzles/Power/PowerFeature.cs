@@ -128,6 +128,7 @@ namespace Tiles.Puzzles.Power
 #endif
         }
 
+#if UNITY_EDITOR
         private static void DrawArrow(
             Vector3 from,
             Vector3 to,
@@ -146,5 +147,6 @@ namespace Tiles.Puzzles.Power
             Handles.DrawLine(to, t1);
             Handles.DrawLine(to, t2);
         }
+#endif
     }
 }

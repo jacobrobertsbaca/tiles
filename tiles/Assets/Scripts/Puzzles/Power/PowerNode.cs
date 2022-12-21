@@ -60,8 +60,14 @@ namespace Tiles.Puzzles.Power
         {
             Assert.IsNotNull(tile);
             if (kGridSize <= 1) return tile.Index;
-            // TODO: Take into account tile rotation
-            return (kGridSize - 1) * tile.Index + new Vector2Int(X, Y);
+            return (kGridSize - 1) * tile.Index + tile.Rotation switch
+            {
+                Tile.TileRotation.North => new Vector2Int(X, Y),
+                Tile.TileRotation.East => new Vector2Int(Y, kGridSize - X - 1),
+                Tile.TileRotation.South => new Vector2Int(kGridSize - X - 1, kGridSize - Y - 1),
+                Tile.TileRotation.West => new Vector2Int(kGridSize - Y - 1, X),
+                _ => throw new ArgumentException("Invalid rotation")
+            };
         }
 
         internal Vector3 ToAbsoluteWorld(Tile tile)

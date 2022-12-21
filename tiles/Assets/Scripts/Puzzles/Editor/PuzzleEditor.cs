@@ -1,10 +1,11 @@
+using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
 
 namespace Tiles.Puzzles.Editor
 {
     [CustomEditor(typeof(Puzzle))]
-    public class PuzzleEditor : UnityEditor.Editor
+    public class PuzzleEditor : OdinEditor
     {
         public static readonly Color gridLineColor = new Color(1, 1, 1, 0.3f);
         const int gridMargin = 1;
@@ -12,7 +13,7 @@ namespace Tiles.Puzzles.Editor
         private Puzzle puzzle;
         private Tile[] tiles;
 
-        private void OnEnable()
+        protected override void OnEnable()
         {
             puzzle = target as Puzzle;
             tiles = puzzle.GetComponentsInChildren<Tile>();

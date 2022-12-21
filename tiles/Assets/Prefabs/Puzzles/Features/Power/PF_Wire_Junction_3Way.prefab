@@ -1,0 +1,261 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1344365072767328051
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4500701315587740027}
+  m_Layer: 0
+  m_Name: PF_Wire_Junction_3Way
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4500701315587740027
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1344365072767328051}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7536149326666128032}
+  - {fileID: 3316443219135024103}
+  - {fileID: 6324349903032742419}
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &5208555413095278530
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 4500701315587740027}
+    m_Modifications:
+    - target: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2680398524608055516, guid: 89ce264c8498a9c4da7aea0fc2845517,
+        type: 3}
+      propertyPath: m_Name
+      value: PF_Wire_Half_W
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 89ce264c8498a9c4da7aea0fc2845517, type: 3}
+--- !u!4 &6324349903032742419 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2273221838374016465, guid: 89ce264c8498a9c4da7aea0fc2845517,
+    type: 3}
+  m_PrefabInstance: {fileID: 5208555413095278530}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6931058679034540564
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 4500701315587740027}
+    m_Modifications:
+    - target: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3610617727163119033, guid: 3b449f26720d6904985bc424e3532e10,
+        type: 3}
+      propertyPath: m_Name
+      value: PF_Wire_Half_N
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3b449f26720d6904985bc424e3532e10, type: 3}
+--- !u!4 &7536149326666128032 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 623140274033797300, guid: 3b449f26720d6904985bc424e3532e10,
+    type: 3}
+  m_PrefabInstance: {fileID: 6931058679034540564}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8423435798142063747
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 4500701315587740027}
+    m_Modifications:
+    - target: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6944263401658237545, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+        type: 3}
+      propertyPath: m_Name
+      value: PF_Wire_Half_S
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: fe3ad20375216e1458ed97cbb2b1a8d7, type: 3}
+--- !u!4 &3316443219135024103 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6548323691512127332, guid: fe3ad20375216e1458ed97cbb2b1a8d7,
+    type: 3}
+  m_PrefabInstance: {fileID: 8423435798142063747}
+  m_PrefabAsset: {fileID: 0}

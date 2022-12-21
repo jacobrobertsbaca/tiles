@@ -2,7 +2,8 @@
     "name": "Tiles.Puzzles",
     "rootNamespace": "",
     "references": [
-        "GUID:b56025855fa132f4b9b281732869f151"
+        "GUID:b56025855fa132f4b9b281732869f151",
+        "GUID:15fc0a57446b3144c949da3e2b9737a9"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
