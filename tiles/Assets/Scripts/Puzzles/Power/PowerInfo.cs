@@ -122,7 +122,7 @@ namespace Tiles.Puzzles.Power
 
         public PowerInfo Combine(PowerInfo other)
         {
-            if (Equals(other)) return this;
+            if (StrictEquals.Equals(this, other)) return this;
             other ??= None;
 
             List<Entry> resulting = new(entries);

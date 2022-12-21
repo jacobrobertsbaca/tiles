@@ -39,7 +39,9 @@ namespace Tiles.Puzzles.Power
                 get
                 {
                     if (changes.TryGetValue(node, out var power)) return power;
-                    return network.GetPower(node.ToAbsolute(feature.Tile));
+                    var absolute = node.ToAbsolute(Tile);
+                    var absolute3D = new Vector3Int(absolute.x, absolute.y, network.GetRotationLayer(Tile));
+                    return network.GetPower(absolute3D);
                 }
 
                 set
@@ -65,13 +67,16 @@ namespace Tiles.Puzzles.Power
             All
         }
 
-        private readonly Dictionary<Vector2Int, PowerInfo> powerMap = new();
-        private readonly Dictionary<Vector2Int, PowerInfo> powerMapUpdates = new();
-        private readonly Dictionary<Vector2Int, List<PowerFeature>> inputFeatures = new();
+        private readonly Dictionary<Vector3Int, PowerInfo> powerMap = new();
+        private readonly Dictionary<Vector3Int, PowerInfo> powerMapUpdates = new();
+        private readonly Dictionary<Vector3Int, List<PowerFeature>> inputFeatures = new();
         private readonly List<PowerFeature> features = new();
         private readonly HashSet<PowerFeature> transmittedFeatures = new();
         private TilePower tilePower;
         private TransmitState state;
+
+        private int rotationLayer = 0;
+        private readonly Dictionary<Tile, int> rotationLayers = new();
 
         protected override void OnAwake()
         {
@@ -106,10 +111,46 @@ namespace Tiles.Puzzles.Power
 
         private void OnTileRotating(EventContext context, Tile tile)
         {
+            rotationLayers[tile] = ++rotationLayer;
+
+            // Move the inputs of features on this tile onto a new layer so they are isolated from the rest of the network
+            foreach (var feature in tile.Features)
+            {
+                if (feature is not PowerFeature pf) continue;
+                foreach (var input in pf.Inputs)
+                {
+                    // 1) Remove the old inputs
+                    var absolute = input.ToAbsolute(tile);
+                    var absolute3D = new Vector3Int(absolute.x, absolute.y, 0);
+                    if (inputFeatures.TryGetValue(absolute3D, out var inputs)) inputs.Remove(pf);
+
+                    // 2) Add the new inputs onto adjusted layer
+                    absolute3D.z = rotationLayer;
+                    if (!inputFeatures.ContainsKey(absolute3D)) inputFeatures[absolute3D] = new();
+                    inputs = inputFeatures[absolute3D];
+                    if (!inputs.Contains(pf)) inputs.Add(pf);
+                }
+            }
+
+            TransmitAll();
         }
 
         private void OnTileRotated(EventContext context, Tile tile)
         {
+            // Move the inputs of features on this tile from the adjusted layer to the main layer so they are part of the network again
+            var layer = rotationLayers[tile];
+            rotationLayers[tile] = 0;
+            Assert.IsTrue(layer > 0);
+
+            // Clear all inputs on the tile's rotation layer, and then re-attach the tile to the main layer
+            foreach (var kv in inputFeatures.Where(kv => kv.Key.z == layer).ToList()) inputFeatures.Remove(kv.Key);
+            foreach (var feature in tile.Features)
+            {
+                if (feature is not PowerFeature pf) continue;
+                AttachFeature(pf);
+            }
+
+            TransmitAll();
         }
 
         private void OnFeatureNeedsTransmit(EventContext context, PowerFeature feature)
@@ -122,11 +163,18 @@ namespace Tiles.Puzzles.Power
             Assert.IsNotNull(feature);
             if (features.Contains(feature)) return;
             features.Add(feature);
+            AttachFeature(feature);
+        }
+
+        private void AttachFeature(PowerFeature feature)
+        {
+            Assert.IsNotNull(feature);
             foreach (var input in feature.Inputs)
             {
                 var absolute = input.ToAbsolute(feature.Tile);
-                if (!inputFeatures.ContainsKey(absolute)) inputFeatures[absolute] = new();
-                var featureList = inputFeatures[absolute];
+                var absolute3D = new Vector3Int(absolute.x, absolute.y, 0);
+                if (!inputFeatures.ContainsKey(absolute3D)) inputFeatures[absolute3D] = new();
+                var featureList = inputFeatures[absolute3D];
                 if (featureList.Contains(feature)) continue;
                 featureList.Add(feature);
             }
@@ -141,11 +189,17 @@ namespace Tiles.Puzzles.Power
                 featureList.Remove(feature);
         }
 
-        private PowerInfo GetPower(Vector2Int absolute)
+        private PowerInfo GetPower(Vector3Int absolute)
         {
             if (powerMapUpdates.TryGetValue(absolute, out var updatedPower)) return updatedPower;
             if (state != TransmitState.All && powerMap.TryGetValue(absolute, out var power)) return power;
             return PowerInfo.None;
+        }
+
+        private int GetRotationLayer(Tile tile)
+        {
+            if (rotationLayers.ContainsKey(tile)) return rotationLayers[tile];
+            return 0;
         }
 
         private void TransmitOne(PowerFeature feature, bool alwaysUpdate = false)
@@ -192,9 +246,12 @@ namespace Tiles.Puzzles.Power
                 foreach (var (node, power) in tilePower.Changes)
                 {
                     var absolute = node.ToAbsolute(feature.Tile);
-                    if (!PowerInfo.StrictEquals.Equals(GetPower(absolute), power))
+                    var absolute3D = new Vector3Int(absolute.x, absolute.y, GetRotationLayer(feature.Tile));
+                    var currentPower = GetPower(absolute3D);
+
+                    if (!PowerInfo.StrictEquals.Equals(currentPower, power))
                     {
-                        if (inputFeatures.TryGetValue(absolute, out var inputs))
+                        if (inputFeatures.TryGetValue(absolute3D, out var inputs))
                         {
                             foreach (var input in inputs)
                             {
@@ -203,7 +260,7 @@ namespace Tiles.Puzzles.Power
                             }
                         }
 
-                        powerMapUpdates[absolute] = power;
+                        powerMapUpdates[absolute3D] = currentPower.Combine(power);
                     }
                 }
             }
@@ -221,7 +278,7 @@ namespace Tiles.Puzzles.Power
             }
 
             // TODO: Pool/cache List?
-            List<Vector2Int> updatedNodes = new();
+            List<Vector3Int> updatedNodes = new();
 
             // Mark for update all nodes which had a change in power state 
             foreach (var (absolute, power) in powerMapUpdates)
@@ -245,7 +302,7 @@ namespace Tiles.Puzzles.Power
                 // If we did not do this pass, then the wires to the right of the cut would not
                 // get updated. These wires had power previously from the source S, but no longer would
                 // after removing the wire, and therefore need an update.
-                foreach (var absolute in powerMap.Keys)
+                foreach (var absolute in inputFeatures.Keys)
                 {
                     if (!powerMapUpdates.ContainsKey(absolute))
                     {
