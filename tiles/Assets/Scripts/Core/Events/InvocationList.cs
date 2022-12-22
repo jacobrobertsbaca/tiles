@@ -66,7 +66,7 @@ namespace Tiles.Core.Events
             totalCount++;
         }
 
-        public bool Invoke(int dispatchId, EventContext context, T data)
+        public bool Invoke(int dispatchId, EventContext context, T data, bool cancelable)
         {
             foreach (var reg in invocationList)
             {
@@ -85,10 +85,10 @@ namespace Tiles.Core.Events
                 // Execute event
                 context.Owner = reg.Owner;
                 reg.Handler(context, data);
-                if (context.cancelledImmediate) return false;
+                if (cancelable && context.cancelledImmediate) return false;
             }
 
-            return !context.cancelled;
+            return !cancelable || !context.cancelled;
         }
 
         public void Unregister(EventListener<T> handler, Component owner, ref int captureCount, ref int totalCount)

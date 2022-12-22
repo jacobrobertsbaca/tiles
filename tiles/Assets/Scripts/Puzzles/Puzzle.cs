@@ -1,15 +1,47 @@
+using DG.Tweening;
 using Sirenix.OdinInspector;
 using System.Collections.Generic;
+using System.Linq;
 using Tiles.Core;
 using Tiles.Core.Events;
 using Tiles.Puzzles.Power;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.Rendering.Universal;
 
 namespace Tiles.Puzzles
 {
     public class Puzzle : Actor
     {
+        private class SwapSelection
+        {
+            private const float kProjectorScale = 0.3f;
+
+            public Tile Tile { get; private set; }
+            private DecalProjector projector;
+            private Tween tween;
+
+            public SwapSelection(Puzzle puzzle, Tile tile)
+            {
+                Tile = tile;
+                projector = Instantiate(puzzle.tileSwapProjectorPrefab.gameObject, puzzle.transform).GetComponent<DecalProjector>();
+                projector.transform.position = tile.transform.position;
+                projector.size = new(kProjectorScale * puzzle.TileSize, kProjectorScale * puzzle.TileSize, projector.size.z);
+                tween = projector.transform.DOLocalRotate(new(90, 360, 0), 2f, RotateMode.FastBeyond360).SetLoops(-1).SetEase(Ease.Linear);
+            }
+
+            public void Destroy()
+            {
+                tween.Kill();
+                Object.Destroy(projector.gameObject);
+            }
+        }
+
+        public static readonly Event<(Tile Swapper, Tile Swappee)> TilesSwapping = new($"{nameof(Puzzle)}::{nameof(TilesSwapping)}");
+        public static readonly Event<(Tile Swapper, Tile Swappee)> TilesSwapped = new($"{nameof(Puzzle)}::{nameof(TilesSwapped)}");
+
+        private const string kReferencesGroup = "References";
+
         /// <summary>
         /// The tile that the player is currently hovering over, or <c>null</c> if no tile is currently being hovered.
         /// </summary>
@@ -18,9 +50,13 @@ namespace Tiles.Puzzles
         [SerializeField] private float tileSize = 1;
         public float TileSize => tileSize;
 
-        [FoldoutGroup("References")]
+        [FoldoutGroup(kReferencesGroup)]
         [SerializeField] private DecalProjector tileSelectedProjectorPrefab;
         private DecalProjector tileSelectedProjector;
+
+        [FoldoutGroup(kReferencesGroup)]
+        [SerializeField] private DecalProjector tileSwapProjectorPrefab;
+        private readonly Queue<SwapSelection> swapSelections = new();
 
         private readonly Dictionary<Vector2Int, Tile> tiles = new Dictionary<Vector2Int, Tile>();
 
@@ -43,6 +79,12 @@ namespace Tiles.Puzzles
             Subscribe(Tile.TileAdded, OnTileAdded);
             Subscribe(Tile.TileRemoved, OnTileRemoved);
             return true;
+        }
+
+        protected override void OnDestroy()
+        {
+            Unsubscribe(Tile.TileAdded);
+            Unsubscribe(Tile.TileRemoved);
         }
 
         private void OnTileAdded(EventContext context, Tile tile)
@@ -68,18 +110,26 @@ namespace Tiles.Puzzles
             {
                 if (Input.GetMouseButtonUp(0)) HoveredTile.RotateLeft();
                 else if (Input.GetMouseButtonUp(1)) HoveredTile.RotateRight();
+                else if (Input.GetKeyDown(KeyCode.Space))
+                {
+                    swapSelections.Enqueue(new SwapSelection(this, HoveredTile));
+                    if (swapSelections.Count > 2) swapSelections.Dequeue().Destroy();
+                }
+            }
+
+            if (swapSelections.Count == 2 && Input.GetKeyDown(KeyCode.S))
+            {
+                SwapSelection swapper = swapSelections.Dequeue();
+                SwapSelection swappee = swapSelections.Dequeue();
+                SwapTiles(swapper.Tile, swappee.Tile);
+                swapper.Destroy();
+                swappee.Destroy();
             }
         }
 
         private void OnTileRemoved(EventContext context, Tile tile)
         {
             tiles.Remove(tile.Index);
-        }
-
-        protected override void OnDestroy()
-        {
-            Unsubscribe(Tile.TileAdded);
-            Unsubscribe(Tile.TileRemoved);
         }
 
         /// <summary>
@@ -103,6 +153,30 @@ namespace Tiles.Puzzles
         public Vector3 GridToWorld(Vector2Int gridIndex, float height = 0)
         {
             return transform.TransformPoint(new Vector3(gridIndex.x * TileSize, height, gridIndex.y * TileSize));
+        }
+
+        private void SwapTiles(Tile swapper, Tile swappee)
+        {
+            Assert.IsTrue(tiles.Values.Contains(swapper));
+            Assert.IsTrue(tiles.Values.Contains(swappee));
+
+            if (swapper == swappee) return;
+
+            TilesSwapping.Execute(this, (swapper, swappee));
+
+            var swapperPos = swapper.transform.position;
+            swapper.transform.position = swappee.transform.position;
+            swappee.transform.position = swapperPos;
+
+            var swapperIndex = swapper.Index;
+            var swappeeIndex = swappee.Index;
+            swapper.index = swappeeIndex;
+            swappee.index = swapperIndex;
+
+            tiles[swapperIndex] = swappee;
+            tiles[swappeeIndex] = swapper;
+
+            TilesSwapped.Execute(this, (swapper, swappee));
         }
 
         private DecalProjector SetupProjector()

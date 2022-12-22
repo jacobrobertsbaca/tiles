@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Tiles.Core.Events
@@ -5,10 +6,12 @@ namespace Tiles.Core.Events
     public class Event
     {
         public string Name { get; }
+        public bool Cancelable { get; }
 
-        public Event(string name)
+        public Event(string name, bool cancelable = false)
         {
             Name = name;
+            Cancelable = cancelable;
         }
 
         public override string ToString()
@@ -19,7 +22,7 @@ namespace Tiles.Core.Events
 
     public class Event<T> : Event
     {
-        public Event(string name) : base(name) {}
+        public Event(string name, bool cancelable = false) : base(name, cancelable) {}
 
         private EventDispatcher<T> dispatcher;
         internal EventDispatcher<T> Dispatcher

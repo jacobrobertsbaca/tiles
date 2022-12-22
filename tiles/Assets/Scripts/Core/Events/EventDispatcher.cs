@@ -167,7 +167,7 @@ namespace Tiles.Core.Events
             if (!transform.gameObject.activeInHierarchy) return true;
             if (!handlerMap.TryGetValue(transform, out var invocationList)) return true;
             context.CurrentTarget = transform;
-            return invocationList.Invoke(dispatchId, context, data);
+            return !evt.Cancelable | invocationList.Invoke(dispatchId, context, data, evt.Cancelable);
         }
     }
 }

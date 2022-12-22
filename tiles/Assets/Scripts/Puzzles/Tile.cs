@@ -25,11 +25,19 @@ namespace Tiles.Puzzles
 
         public static readonly Event<Tile> TileAdded = new($"{nameof(Tile)}::{nameof(TileAdded)}");
         public static readonly Event<Tile> TileRemoved = new($"{nameof(Tile)}::{nameof(TileRemoved)}");
+
+        /// <summary>
+        /// Called when a tile starts to rotate, after <see cref="Rotating"/> becomes <c>true</c> but before <see cref="Rotation"/> has been updated.
+        /// </summary>
         public static readonly Event<Tile> TileRotating = new($"{nameof(Tile)}::{nameof(TileRotating)}");
+
+        /// <summary>
+        /// Called when a tile finishes rotating, after <see cref="Rotating"/> becomes <c>false</c> and <see cref="Rotation"/> has been updated.
+        /// </summary>
         public static readonly Event<Tile> TileRotated = new($"{nameof(Tile)}::{nameof(TileRotated)}");
 
         [DisableInPlayMode]
-        [SerializeField] private Vector2Int index;
+        [SerializeField] internal Vector2Int index;
         public Vector2Int Index => index;
 
         [DisableInPlayMode]
@@ -119,6 +127,14 @@ namespace Tiles.Puzzles
             });
         }
 
+        public IEnumerable<TFeature> GetFeatures<TFeature>()
+        {
+            foreach (var feature in features)
+            {
+                if (feature is TFeature tf) yield return tf;
+            }
+        }
+
         private void RotateTo(TileRotation rotation, bool animate = true)
         {
             if (Rotating || this.rotation == rotation) return;
@@ -194,13 +210,13 @@ namespace Tiles.Puzzles
 
             float height = tile.Puzzle.transform.InverseTransformPoint(tile.transform.position).y;
             Vector3 minCorner = new Vector3(
-                tile.Puzzle.TileSize * (tile.index.x - 0.5f),
+                tile.Puzzle.TileSize * (tile.Index.x - 0.5f),
                 height,
-                tile.Puzzle.TileSize * (tile.index.y - 0.5f));
+                tile.Puzzle.TileSize * (tile.Index.y - 0.5f));
             Vector3 maxCorner = new Vector3(
-                tile.Puzzle.TileSize * (tile.index.x + 0.5f),
+                tile.Puzzle.TileSize * (tile.Index.x + 0.5f),
                 height,
-                tile.Puzzle.TileSize * (tile.index.y + 0.5f));
+                tile.Puzzle.TileSize * (tile.Index.y + 0.5f));
 
             Vector3 ll = tile.Puzzle.transform.TransformPoint(minCorner);
             Vector3 ul = tile.Puzzle.transform.TransformPoint(new Vector3(minCorner.x, height, maxCorner.z));

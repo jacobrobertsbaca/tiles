@@ -92,7 +92,21 @@ namespace Tiles.Puzzles.Power
             Subscribe(Tile.TileRotating, OnTileRotating);
             Subscribe(Tile.TileRotated, OnTileRotated);
             Subscribe(PowerFeature.NeedsTransmit, OnFeatureNeedsTransmit);
+            Subscribe(Puzzle.TilesSwapping, OnTilesSwapping);
+            Subscribe(Puzzle.TilesSwapped, OnTilesSwapped);
             return base.OnInitialize();
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            Unsubscribe(TileFeature.FeatureAdded);
+            Unsubscribe(TileFeature.FeatureRemoved);
+            Unsubscribe(Tile.TileRotating);
+            Unsubscribe(Tile.TileRotated);
+            Unsubscribe(PowerFeature.NeedsTransmit);
+            Unsubscribe(Puzzle.TilesSwapping);
+            Unsubscribe(Puzzle.TilesSwapped);
         }
 
         private void OnFeatureAdded(EventContext context, TileFeature feature)
@@ -114,9 +128,9 @@ namespace Tiles.Puzzles.Power
             rotationLayers[tile] = ++rotationLayer;
 
             // Move the inputs of features on this tile onto a new layer so they are isolated from the rest of the network
-            foreach (var feature in tile.Features)
+            foreach (var pf in tile.GetFeatures<PowerFeature>())
             {
-                if (feature is not PowerFeature pf) continue;
+                // TODO: Somehow refactor this code to use Remove/Add/Attach methods?
                 foreach (var input in pf.Inputs)
                 {
                     // 1) Remove the old inputs
@@ -144,11 +158,7 @@ namespace Tiles.Puzzles.Power
 
             // Clear all inputs on the tile's rotation layer, and then re-attach the tile to the main layer
             foreach (var kv in inputFeatures.Where(kv => kv.Key.z == layer).ToList()) inputFeatures.Remove(kv.Key);
-            foreach (var feature in tile.Features)
-            {
-                if (feature is not PowerFeature pf) continue;
-                AttachFeature(pf);
-            }
+            foreach (var pf in tile.GetFeatures<PowerFeature>()) AttachFeature(pf);
 
             TransmitAll();
         }
@@ -156,6 +166,22 @@ namespace Tiles.Puzzles.Power
         private void OnFeatureNeedsTransmit(EventContext context, PowerFeature feature)
         {
             TransmitOne(feature);
+        }
+
+        private void OnTilesSwapping(EventContext context, (Tile Swapper, Tile Swappee) data)
+        {
+            // Remove all features on both tiles
+            foreach (var pf in data.Swapper.GetFeatures<PowerFeature>()) RemoveFeature(pf);
+            foreach (var pf in data.Swappee.GetFeatures<PowerFeature>()) RemoveFeature(pf);
+            TransmitAll();
+        }
+
+        private void OnTilesSwapped(EventContext context, (Tile Swapper, Tile Swappee) data)
+        {
+            // Add all features on both tiles
+            foreach (var pf in data.Swapper.GetFeatures<PowerFeature>()) AddFeature(pf);
+            foreach (var pf in data.Swappee.GetFeatures<PowerFeature>()) AddFeature(pf);
+            TransmitAll();
         }
 
         private void AddFeature(PowerFeature feature)
@@ -169,10 +195,11 @@ namespace Tiles.Puzzles.Power
         private void AttachFeature(PowerFeature feature)
         {
             Assert.IsNotNull(feature);
+            Assert.IsTrue(features.Contains(feature));
             foreach (var input in feature.Inputs)
             {
                 var absolute = input.ToAbsolute(feature.Tile);
-                var absolute3D = new Vector3Int(absolute.x, absolute.y, 0);
+                var absolute3D = new Vector3Int(absolute.x, absolute.y, GetRotationLayer(feature.Tile));
                 if (!inputFeatures.ContainsKey(absolute3D)) inputFeatures[absolute3D] = new();
                 var featureList = inputFeatures[absolute3D];
                 if (featureList.Contains(feature)) continue;
@@ -346,14 +373,6 @@ namespace Tiles.Puzzles.Power
             }
 
             state = TransmitState.None;
-        }
-
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-            Unsubscribe(TileFeature.FeatureAdded);
-            Unsubscribe(TileFeature.FeatureRemoved);
-            Unsubscribe(PowerFeature.NeedsTransmit);
         }
     }
 }
